@@ -1,5 +1,64 @@
 {
+  "name": "agentics-deployment-exporters",
+  "version": "1.0.0",
+  "description": "Pure translation layer transforming DeploymentIntent specifications into platform-specific deployable artifacts",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./core": {
+      "types": "./dist/core/index.d.ts",
+      "import": "./dist/core/index.js"
+    },
+    "./exporters": {
+      "types": "./dist/exporters/index.d.ts",
+      "import": "./dist/exporters/index.js"
+    },
+    "./serializers": {
+      "types": "./dist/serializers/index.d.ts",
+      "import": "./dist/serializers/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "keywords": [
+    "deployment",
+    "exporters",
+    "terraform",
+    "kubernetes",
+    "helm",
+    "cloudformation",
+    "infrastructure-as-code",
+    "deterministic"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/uuid": "^10.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.13.0",
+    "@typescript-eslint/parser": "^6.13.0",
+    "@vitest/coverage-v8": "^1.0.0",
+    "eslint": "^8.55.0",
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0"
+  },
   "dependencies": {
-    "claude-flow": "^2.7.47"
+    "uuid": "^9.0.0",
+    "yaml": "^2.3.4",
+    "zod": "^3.22.4"
   }
 }
