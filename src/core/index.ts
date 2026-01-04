@@ -294,3 +294,65 @@ export {
   isRecoverableError,
   extractErrorDetails,
 } from './errors.js';
+
+// =============================================================================
+// ERP SURFACE DETECTION
+// =============================================================================
+
+export {
+  // ERP Vendor types
+  ERPVendorValues,
+  type ERPVendor,
+  ERPVendorSchema,
+  isERPVendor,
+
+  // Integration types
+  ERPIntegrationTypeValues,
+  type ERPIntegrationType,
+  ERPIntegrationTypeSchema,
+  isERPIntegrationType,
+
+  // Surface reference
+  type ERPSurfaceReference,
+  ERPSurfaceReferenceSchema,
+
+  // Integration slot
+  IntegrationSlotStatusValues,
+  type IntegrationSlotStatus,
+  IntegrationSlotStatusSchema,
+  isIntegrationSlotStatus,
+  type IntegrationSlot,
+  IntegrationSlotSchema,
+
+  // Stub types
+  StubOutputFormatValues,
+  type StubOutputFormat,
+  StubOutputFormatSchema,
+  type IntegrationStub,
+  IntegrationStubSchema,
+
+  // Marker
+  type IntegrationMarker,
+  IntegrationMarkerSchema,
+
+  // Audit
+  type IntegrationSlotAudit,
+  IntegrationSlotAuditSchema,
+
+  // Detection result
+  type ERPDetectionResult,
+  type ERPDetectionSummary,
+  ERPDetectionResultSchema,
+
+  // Detector
+  ERPSurfaceDetector,
+  createERPSurfaceDetector,
+  type ERPDetectorOptions,
+
+  // Stub generator
+  ERPStubGenerator,
+  createERPStubGenerator,
+  generateStubHeader,
+  type StubArtifactOptions,
+  type StubArtifactResult,
+} from './erp/index.js';

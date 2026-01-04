@@ -107,4 +107,20 @@ IntegrityError, ChecksumMismatchError, SignatureVerificationError, HashComputati
 ParseError, PackagingError, 
 // Error utilities
 ErrorCategories, getErrorCategory, isErrorInCategory, isExportError, isRecoverableError, extractErrorDetails, } from './errors.js';
+// =============================================================================
+// ERP SURFACE DETECTION
+// =============================================================================
+export { 
+// ERP Vendor types
+ERPVendorValues, ERPVendorSchema, isERPVendor, 
+// Integration types
+ERPIntegrationTypeValues, ERPIntegrationTypeSchema, isERPIntegrationType, ERPSurfaceReferenceSchema, 
+// Integration slot
+IntegrationSlotStatusValues, IntegrationSlotStatusSchema, isIntegrationSlotStatus, IntegrationSlotSchema, 
+// Stub types
+StubOutputFormatValues, StubOutputFormatSchema, IntegrationStubSchema, IntegrationMarkerSchema, IntegrationSlotAuditSchema, ERPDetectionResultSchema, 
+// Detector
+ERPSurfaceDetector, createERPSurfaceDetector, 
+// Stub generator
+ERPStubGenerator, createERPStubGenerator, generateStubHeader, } from './erp/index.js';
 //# sourceMappingURL=index.js.map
