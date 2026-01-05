@@ -20,12 +20,18 @@ export * from './helm/index.js';
 export { CloudFormationExporter, createCloudFormationExporter, ResourceMapper as CFNResourceMapper, TemplateGenerator as CFNTemplateGenerator, toCFNLogicalId, sortObjectKeys as cfnSortObjectKeys, createRef, createGetAtt, createSub, createJoin, createIf, createImportValue, COMPONENT_TYPE_MAPPINGS, type CFNTemplate, type CFNMetadata, type CFNResource, type CFNParameter, type CFNOutput, type CFNMapping, type CFNRef, type CFNGetAtt, type CFNSub, type CFNJoin, type CFNIf, type CFNImportValue, type CFNParameterFile, type CFNParameterFileEntry, type CFNResourceMapping, type AgenticsExporterMetadata, type CFNCreationPolicy, type CFNUpdatePolicy, type CFNInterfaceMetadata, type CFNParameterGroup, type ContainerSpec as CFNContainerSpec, type DatabaseSpec as CFNDatabaseSpec, type NetworkSpec as CFNNetworkSpec, type SubnetSpec as CFNSubnetSpec, type StorageSpec as CFNStorageSpec, type LifecycleRule as CFNLifecycleRule, type CorsRule as CFNCorsRule, } from './cloudformation/index.js';
 export * from './iam/index.js';
 export { DatabaseSchemaExporter, createDatabaseSchemaExporter, quoteIdentifier, formatTableName, mapColumnType, generateColumnDefinition, formatDefaultValue, generateCreateTable, generateCreateIndex, generateForeignKey, generateDropTable, generateDropIndex, generateCreateSequence, generateCreateView, generateCreateType, generateComment, DEFAULT_DDL_OPTIONS, formatMigrationNumber, generateMigrationFilename, generateTableMigration, generateSchemaMigrations, topologicalSortTables, DATABASE_RESOURCE_TYPES, isDatabaseResourceType, DEFAULT_DIALECT, MIGRATION_NUMBER_FORMAT, TIMESTAMP_DEFAULTS, type DDLGeneratorOptions, type SchemaMigrationOptions, type Column as DBColumn, type ColumnType as DBColumnType, type ForeignKeyReference, type ForeignKeyAction, type ForeignKey as DBForeignKey, type Index as DBIndex, type IndexColumn, type IndexType as DBIndexType, type Table as DBTable, type UniqueConstraint, type CheckConstraint, type TableOptions, type PartitionDefinition, type Partition, type Migration, type MigrationSet, type DatabaseConfiguration, type DatabaseDialect, type View, type Sequence, type CustomType, type DDLStatement, type DDLStatementType, type DDLObjectType, type DatabaseResourceType, type SQLDialect, type SQLDataType, type SQLColumn, type SQLForeignKey, type SQLIndex, type SQLTable, type SQLDocument, } from './database/index.js';
+export * from './simulation/index.js';
+export * from './financial/index.js';
+export * from './enterprise/index.js';
 import { TerraformExporter } from './terraform/TerraformExporter.js';
 import { createKubernetesExporter } from './kubernetes/KubernetesExporter.js';
 import { createHelmExporter } from './helm/HelmExporter.js';
 import { createCloudFormationExporter } from './cloudformation/CloudFormationExporter.js';
 import { createIAMPolicyExporter } from './iam/IAMPolicyExporter.js';
 import { createDatabaseSchemaExporter } from './database/DatabaseSchemaExporter.js';
+import { createSimulationExporter } from './simulation/SimulationExporter.js';
+import { createFinancialExporter } from './financial/FinancialExporter.js';
+import { createEnterpriseManifestGenerator } from './enterprise/EnterpriseManifestGenerator.js';
 /**
  * Factory function to create a new TerraformExporter instance.
  *
@@ -155,6 +161,18 @@ export declare const Exporters: {
      * Create a Database Schema exporter.
      */
     readonly database: typeof createDatabaseSchemaExporter;
+    /**
+     * Create a Simulation exporter for agentics-simulation-engine artifacts.
+     */
+    readonly simulation: typeof createSimulationExporter;
+    /**
+     * Create a Financial exporter for enterprise-roi-engine artifacts.
+     */
+    readonly financial: typeof createFinancialExporter;
+    /**
+     * Create an Enterprise Manifest generator for unified exports.
+     */
+    readonly enterprise: typeof createEnterpriseManifestGenerator;
     /**
      * Create an exporter for the specified format.
      */
