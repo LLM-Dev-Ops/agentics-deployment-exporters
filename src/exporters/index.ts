@@ -149,6 +149,15 @@ export {
   type SQLDocument,
 } from './database/index.js';
 
+// Simulation exporter - for agentics-simulation-engine artifacts
+export * from './simulation/index.js';
+
+// Financial exporter - for enterprise-roi-engine artifacts
+export * from './financial/index.js';
+
+// Enterprise manifest generator - unified export package
+export * from './enterprise/index.js';
+
 // =============================================================================
 // INTERNAL IMPORTS FOR REGISTRY
 // Note: We import factory functions and classes for use in the registry
@@ -160,6 +169,9 @@ import { createHelmExporter } from './helm/HelmExporter.js';
 import { createCloudFormationExporter } from './cloudformation/CloudFormationExporter.js';
 import { createIAMPolicyExporter } from './iam/IAMPolicyExporter.js';
 import { createDatabaseSchemaExporter } from './database/DatabaseSchemaExporter.js';
+import { createSimulationExporter } from './simulation/SimulationExporter.js';
+import { createFinancialExporter } from './financial/FinancialExporter.js';
+import { createEnterpriseManifestGenerator } from './enterprise/EnterpriseManifestGenerator.js';
 
 // =============================================================================
 // FACTORY FUNCTIONS
@@ -237,6 +249,9 @@ export class ExporterRegistry {
     this.register(createCloudFormationExporter());
     this.register(createIAMPolicyExporter());
     this.register(createDatabaseSchemaExporter());
+    this.register(createSimulationExporter());
+    this.register(createFinancialExporter());
+    this.register(createEnterpriseManifestGenerator());
   }
 
   /**
@@ -386,6 +401,21 @@ export const Exporters = {
   database: createDatabaseSchemaExporter,
 
   /**
+   * Create a Simulation exporter for agentics-simulation-engine artifacts.
+   */
+  simulation: createSimulationExporter,
+
+  /**
+   * Create a Financial exporter for enterprise-roi-engine artifacts.
+   */
+  financial: createFinancialExporter,
+
+  /**
+   * Create an Enterprise Manifest generator for unified exports.
+   */
+  enterprise: createEnterpriseManifestGenerator,
+
+  /**
    * Create an exporter for the specified format.
    */
   create(format: ExportFormat): IExporter {
@@ -402,6 +432,10 @@ export const Exporters = {
         return createIAMPolicyExporter();
       case 'sql':
         return createDatabaseSchemaExporter();
+      case 'config':
+        // Return simulation exporter by default for 'config' format
+        // Users can also directly use simulation/financial/enterprise factories
+        return createSimulationExporter();
       default:
         throw new Error(`Unknown exporter format: ${format}`);
     }
