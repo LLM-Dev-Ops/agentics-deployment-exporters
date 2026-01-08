@@ -385,6 +385,137 @@ export async function exportIntent(input, options) {
     }
 }
 /**
+ * Export a validated deployment intent to the specified formats.
+ *
+ * STRICT MODE - NO FALLBACKS:
+ * - Input MUST be a pre-validated intent object (not a file path)
+ * - All required fields MUST be present - no defaults injected
+ * - Validation cannot be skipped
+ * - Missing required fields throw errors immediately
+ *
+ * This function is designed to be used after contract validation
+ * has already verified the input against the request schema.
+ *
+ * @param input - Pre-validated intent object (NOT a file path)
+ * @param options - Strict export options (no skip options)
+ * @returns Export result
+ * @throws Error if required fields are missing
+ */
+export async function exportIntentStrict(input, options) {
+    const startedAt = new Date().toISOString();
+    const correlationId = crypto.randomUUID();
+    const exportId = crypto.randomUUID();
+    // STRICT: Validate required fields - NO FALLBACKS
+    if (!input.apiVersion) {
+        throw new Error('CONTRACT_VIOLATION: apiVersion is required');
+    }
+    if (!input.kind) {
+        throw new Error('CONTRACT_VIOLATION: kind is required');
+    }
+    if (!input.metadata) {
+        throw new Error('CONTRACT_VIOLATION: metadata is required');
+    }
+    if (!input.metadata.name) {
+        throw new Error('CONTRACT_VIOLATION: metadata.name is required');
+    }
+    // STRICT: Build intent WITHOUT any fallback values
+    const normalizedIntent = {
+        apiVersion: input.apiVersion, // NO FALLBACK
+        kind: input.kind, // NO FALLBACK
+        metadata: {
+            name: input.metadata.name, // NO FALLBACK
+            version: input.metadata.version || '', // Empty string if not provided - NO DEFAULT
+            createdAt: input.metadata.createdAt || startedAt, // Use request time if not provided
+            labels: input.metadata.labels || {}, // Empty - NO DEFAULTS
+            annotations: input.metadata.annotations || {}, // Empty - NO DEFAULTS
+        },
+        spec: input.spec || {},
+        hash: crypto.randomUUID(),
+    };
+    // STRICT: Always validate - cannot be skipped
+    const validator = new IntentValidator();
+    const validationResult = await validator.validate({ data: input });
+    if (!validationResult.valid) {
+        const completedAt = new Date().toISOString();
+        return {
+            success: false,
+            artifacts: [],
+            errors: validationResult.errors.map((e) => ({
+                code: e.code,
+                message: e.message,
+                exporterId: 'validator',
+                stage: 'validation',
+                recoverable: false,
+            })),
+            warnings: validationResult.warnings.map((w) => ({
+                code: w.code,
+                message: w.message,
+            })),
+            metadata: {
+                exportId,
+                correlationId,
+                startedAt,
+                completedAt,
+                durationMs: Date.now() - new Date(startedAt).getTime(),
+                intentHash: normalizedIntent.hash,
+                intentVersion: input.metadata.version || '',
+                executedExporters: [],
+            },
+        };
+    }
+    // Create orchestrator and execute
+    const orchestrator = createDefaultOrchestrator();
+    const orchestrationOptions = {};
+    if (options?.formats !== undefined)
+        orchestrationOptions.formats = options.formats;
+    if (options?.concurrency !== undefined)
+        orchestrationOptions.concurrency = options.concurrency;
+    if (options?.dryRun !== undefined)
+        orchestrationOptions.dryRun = options.dryRun;
+    const result = await orchestrator.execute(normalizedIntent, orchestrationOptions);
+    // Convert to simplified result format
+    const completedAt = new Date().toISOString();
+    return {
+        success: result.success,
+        artifacts: result.artifacts.map((a) => ({
+            path: a.path,
+            content: a.content,
+            format: a.format,
+        })),
+        errors: result.errors.map((e) => ({
+            code: e.code,
+            message: e.message,
+            exporterId: e.exporterId,
+            stage: e.stage,
+            recoverable: e.recoverable,
+        })),
+        warnings: result.warnings.map((w) => ({
+            code: w.code,
+            message: w.message,
+        })),
+        metadata: {
+            exportId,
+            correlationId,
+            startedAt,
+            completedAt,
+            durationMs: Date.now() - new Date(startedAt).getTime(),
+            intentHash: normalizedIntent.hash,
+            intentVersion: input.metadata.version || '',
+            executedExporters: result.metadata.executedExporters.map((e) => ({
+                exporterId: e.exporterId,
+                version: String(e.version),
+                status: String(e.status),
+                artifactCount: e.artifactCount,
+                durationMs: e.durationMs,
+                ...(e.error !== undefined ? { error: e.error } : {}),
+            })),
+        },
+    };
+}
+// =============================================================================
+// ORCHESTRATOR FACTORY
+// =============================================================================
+/**
  * Create an orchestrator pre-configured with all available exporters.
  *
  * This factory function creates an ExportOrchestrator instance with
@@ -461,6 +592,7 @@ export const NAME = '@agentics/deployment-exporters';
  */
 export default {
     exportIntent,
+    exportIntentStrict,
     createDefaultOrchestrator,
     createOrchestrator,
     AVAILABLE_FORMATS,

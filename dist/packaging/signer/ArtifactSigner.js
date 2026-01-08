@@ -295,7 +295,10 @@ export class ArtifactSigner {
             // Sort metadata keys for determinism
             const sortedMetadata = {};
             for (const key of Object.keys(metadata).sort()) {
-                sortedMetadata[key] = metadata[key];
+                const value = metadata[key];
+                if (value !== undefined) {
+                    sortedMetadata[key] = value;
+                }
             }
             envelope.metadata = sortedMetadata;
         }

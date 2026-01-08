@@ -231,6 +231,58 @@ export type ExportIntentInput = string | {
  */
 export declare function exportIntent(input: ExportIntentInput, options?: ExportIntentOptions): Promise<SimpleExportResult>;
 /**
+ * Strict options for exportIntentStrict - NO SKIP OPTIONS ALLOWED
+ */
+export interface StrictExportOptions {
+    /**
+     * Target export formats (terraform, kubernetes, helm)
+     */
+    readonly formats?: readonly string[];
+    /**
+     * Maximum parallel exporters
+     */
+    readonly concurrency?: number;
+    /**
+     * Dry run (plan only, no execution)
+     */
+    readonly dryRun?: boolean;
+}
+/**
+ * Input type for exportIntentStrict - already validated intent object only.
+ * No file paths allowed - validation must have already happened.
+ */
+export type StrictExportInput = {
+    readonly apiVersion: string;
+    readonly kind: string;
+    readonly metadata: {
+        readonly name: string;
+        readonly namespace?: string;
+        readonly labels?: Record<string, string>;
+        readonly annotations?: Record<string, string>;
+        readonly version?: string;
+        readonly createdAt?: string;
+    };
+    readonly spec?: Record<string, unknown>;
+};
+/**
+ * Export a validated deployment intent to the specified formats.
+ *
+ * STRICT MODE - NO FALLBACKS:
+ * - Input MUST be a pre-validated intent object (not a file path)
+ * - All required fields MUST be present - no defaults injected
+ * - Validation cannot be skipped
+ * - Missing required fields throw errors immediately
+ *
+ * This function is designed to be used after contract validation
+ * has already verified the input against the request schema.
+ *
+ * @param input - Pre-validated intent object (NOT a file path)
+ * @param options - Strict export options (no skip options)
+ * @returns Export result
+ * @throws Error if required fields are missing
+ */
+export declare function exportIntentStrict(input: StrictExportInput, options?: StrictExportOptions): Promise<SimpleExportResult>;
+/**
  * Create an orchestrator pre-configured with all available exporters.
  *
  * This factory function creates an ExportOrchestrator instance with
@@ -296,6 +348,7 @@ export declare const NAME: "@agentics/deployment-exporters";
  */
 declare const _default: {
     exportIntent: typeof exportIntent;
+    exportIntentStrict: typeof exportIntentStrict;
     createDefaultOrchestrator: typeof createDefaultOrchestrator;
     createOrchestrator: typeof createOrchestrator;
     AVAILABLE_FORMATS: readonly ["terraform", "kubernetes", "helm"];
