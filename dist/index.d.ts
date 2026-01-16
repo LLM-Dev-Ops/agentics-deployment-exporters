@@ -344,6 +344,18 @@ export declare const VERSION: "1.0.0";
  */
 export declare const NAME: "@agentics/deployment-exporters";
 /**
+ * Executive synthesis for deployment validation.
+ * @see {@link module:synthesis}
+ */
+export { RiskLevelValues, RecommendationValues, ChangeActionValues, DeployStatusValues, isRiskLevel, isRecommendation, isChangeAction, isDeployStatus, isExecutiveSummary, SUCCESS_RATE_THRESHOLD, PRODUCTION_ENVIRONMENTS, assessRiskLevel, determineRecommendation, elevateRiskForProduction, isProductionTarget, buildDeployReference, buildExecutionMetrics, buildExecutiveSummary, extractBlockingIssuesFromPreview, calculatePreviewMetrics, buildSynthesisFromPreview, buildSynthesisFromRecord, calculateSuccessRate, determineEnvironment, } from './synthesis/index.js';
+export type { RiskLevel, Recommendation, DeployReference, ExecutionMetrics, ExecutiveSummary, DeployReferenceInput, ExecutionMetricsInput, ChangeAction, PreviewChange, DeployPreview, DeployStatus, DeployRecord, } from './synthesis/index.js';
+/**
+ * Command implementations for deployment operations.
+ * @see {@link module:commands}
+ */
+export { deploy, deployPreview, deployRun, deployRollback, isProductionDeployment, calculateDeploySuccessRate, countBlockingIssues, extractBlockingIssues, deployCommand, } from './commands/index.js';
+export type { DeployInput, DeployOptions, DeployStepLog, DeployCommandResult, DeployPreviewResult, DeployRunResult, DeployFullResult, } from './commands/index.js';
+/**
  * Default export provides the main convenience functions.
  */
 declare const _default: {

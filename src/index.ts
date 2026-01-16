@@ -1139,6 +1139,97 @@ export const VERSION = '1.0.0' as const;
 export const NAME = '@agentics/deployment-exporters' as const;
 
 // =============================================================================
+// SYNTHESIS MODULE RE-EXPORTS
+// =============================================================================
+
+/**
+ * Executive synthesis for deployment validation.
+ * @see {@link module:synthesis}
+ */
+export {
+  // Type value arrays
+  RiskLevelValues,
+  RecommendationValues,
+  ChangeActionValues,
+  DeployStatusValues,
+  // Type guards
+  isRiskLevel,
+  isRecommendation,
+  isChangeAction,
+  isDeployStatus,
+  isExecutiveSummary,
+  // Constants
+  SUCCESS_RATE_THRESHOLD,
+  PRODUCTION_ENVIRONMENTS,
+  // Risk assessment
+  assessRiskLevel,
+  determineRecommendation,
+  // Production elevation
+  elevateRiskForProduction,
+  isProductionTarget,
+  // Builder functions
+  buildDeployReference,
+  buildExecutionMetrics,
+  buildExecutiveSummary,
+  // Preview synthesis
+  extractBlockingIssuesFromPreview,
+  calculatePreviewMetrics,
+  buildSynthesisFromPreview,
+  // Record synthesis
+  buildSynthesisFromRecord,
+  // Utilities
+  calculateSuccessRate,
+  determineEnvironment,
+} from './synthesis/index.js';
+
+// Re-export synthesis types
+export type {
+  RiskLevel,
+  Recommendation,
+  DeployReference,
+  ExecutionMetrics,
+  ExecutiveSummary,
+  DeployReferenceInput,
+  ExecutionMetricsInput,
+  ChangeAction,
+  PreviewChange,
+  DeployPreview,
+  DeployStatus,
+  DeployRecord,
+} from './synthesis/index.js';
+
+// =============================================================================
+// COMMANDS MODULE RE-EXPORTS
+// =============================================================================
+
+/**
+ * Command implementations for deployment operations.
+ * @see {@link module:commands}
+ */
+export {
+  deploy,
+  deployPreview,
+  deployRun,
+  deployRollback,
+  isProductionDeployment,
+  calculateDeploySuccessRate,
+  countBlockingIssues,
+  extractBlockingIssues,
+  deployCommand,
+} from './commands/index.js';
+
+// Re-export command types
+export type {
+  DeployInput,
+  DeployOptions,
+  DeployStepLog,
+  DeployCommandResult,
+  DeployPreviewResult,
+  DeployRunResult,
+  DeployFullResult,
+} from './commands/index.js';
+
+// =============================================================================
 // DEFAULT EXPORT
 // =============================================================================
 

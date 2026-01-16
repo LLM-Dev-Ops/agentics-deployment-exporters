@@ -229,7 +229,7 @@ export declare const SimulationRecommendationSchema: z.ZodObject<{
     relatedReferences: z.ZodArray<z.ZodString, "many">;
 }, "strip", z.ZodTypeAny, {
     description: string;
-    priority: "critical" | "high" | "medium" | "low" | "informational";
+    priority: "low" | "medium" | "high" | "critical" | "informational";
     category: string;
     recommendationId: string;
     title: string;
@@ -238,7 +238,7 @@ export declare const SimulationRecommendationSchema: z.ZodObject<{
     estimatedImpact?: Record<string, unknown> | undefined;
 }, {
     description: string;
-    priority: "critical" | "high" | "medium" | "low" | "informational";
+    priority: "low" | "medium" | "high" | "critical" | "informational";
     category: string;
     recommendationId: string;
     title: string;
@@ -322,7 +322,7 @@ export declare const ImplementationPlanItemSchema: z.ZodObject<{
     status: "completed" | "in-progress" | "proposed" | "approved" | "deferred" | "rejected";
     phase: string;
     description: string;
-    priority: "critical" | "high" | "medium" | "low" | "informational";
+    priority: "low" | "medium" | "high" | "critical" | "informational";
     itemId: string;
     risks: string[];
     title: string;
@@ -335,7 +335,7 @@ export declare const ImplementationPlanItemSchema: z.ZodObject<{
     status: "completed" | "in-progress" | "proposed" | "approved" | "deferred" | "rejected";
     phase: string;
     description: string;
-    priority: "critical" | "high" | "medium" | "low" | "informational";
+    priority: "low" | "medium" | "high" | "critical" | "informational";
     itemId: string;
     risks: string[];
     title: string;
