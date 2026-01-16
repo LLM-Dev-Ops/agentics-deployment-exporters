@@ -35,7 +35,44 @@ export {
 } from './deploy.js';
 
 // =============================================================================
+// EXPORT COMMAND EXPORTS
+// =============================================================================
+
+export type {
+  ExportFormat,
+  ExportInput,
+  ExportOptions,
+  ExportArtifact,
+  ExportValidationIssue,
+  ExportStepLog,
+  ExportCommandResult,
+  LocalExportResult,
+  ExportMetadata,
+} from './export.js';
+
+export {
+  ExportFormatValues,
+  exportArtifacts,
+  exportTerraform,
+  exportKubernetes,
+  exportHelm,
+  exportAll,
+  isExportFormat,
+  determineExportEnvironment,
+  isProductionExport,
+  detectSecrets,
+  detectInvalidReferences,
+  detectMissingFields,
+  validateArtifact,
+  extractExportBlockingIssues,
+  calculateExportSuccessRate,
+  countExportFailures,
+  assessExportRisk,
+} from './export.js';
+
+// =============================================================================
 // DEFAULT EXPORT
 // =============================================================================
 
 export { default as deployCommand } from './deploy.js';
+export { default as exportCommand } from './export.js';

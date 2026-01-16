@@ -1203,10 +1203,11 @@ export type {
 // =============================================================================
 
 /**
- * Command implementations for deployment operations.
+ * Command implementations for deployment and export operations.
  * @see {@link module:commands}
  */
 export {
+  // Deploy command
   deploy,
   deployPreview,
   deployRun,
@@ -1216,10 +1217,30 @@ export {
   countBlockingIssues,
   extractBlockingIssues,
   deployCommand,
+  // Export command
+  ExportFormatValues,
+  exportArtifacts,
+  exportTerraform,
+  exportKubernetes,
+  exportHelm,
+  exportAll,
+  isExportFormat,
+  determineExportEnvironment,
+  isProductionExport,
+  detectSecrets,
+  detectInvalidReferences,
+  detectMissingFields,
+  validateArtifact,
+  extractExportBlockingIssues,
+  calculateExportSuccessRate,
+  countExportFailures,
+  assessExportRisk,
+  exportCommand,
 } from './commands/index.js';
 
 // Re-export command types
 export type {
+  // Deploy types
   DeployInput,
   DeployOptions,
   DeployStepLog,
@@ -1227,6 +1248,16 @@ export type {
   DeployPreviewResult,
   DeployRunResult,
   DeployFullResult,
+  // Export types
+  ExportFormat,
+  ExportInput,
+  ExportOptions,
+  ExportArtifact,
+  ExportValidationIssue,
+  ExportStepLog,
+  ExportCommandResult,
+  LocalExportResult,
+  ExportMetadata,
 } from './commands/index.js';
 
 // =============================================================================

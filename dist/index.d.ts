@@ -350,11 +350,11 @@ export declare const NAME: "@agentics/deployment-exporters";
 export { RiskLevelValues, RecommendationValues, ChangeActionValues, DeployStatusValues, isRiskLevel, isRecommendation, isChangeAction, isDeployStatus, isExecutiveSummary, SUCCESS_RATE_THRESHOLD, PRODUCTION_ENVIRONMENTS, assessRiskLevel, determineRecommendation, elevateRiskForProduction, isProductionTarget, buildDeployReference, buildExecutionMetrics, buildExecutiveSummary, extractBlockingIssuesFromPreview, calculatePreviewMetrics, buildSynthesisFromPreview, buildSynthesisFromRecord, calculateSuccessRate, determineEnvironment, } from './synthesis/index.js';
 export type { RiskLevel, Recommendation, DeployReference, ExecutionMetrics, ExecutiveSummary, DeployReferenceInput, ExecutionMetricsInput, ChangeAction, PreviewChange, DeployPreview, DeployStatus, DeployRecord, } from './synthesis/index.js';
 /**
- * Command implementations for deployment operations.
+ * Command implementations for deployment and export operations.
  * @see {@link module:commands}
  */
-export { deploy, deployPreview, deployRun, deployRollback, isProductionDeployment, calculateDeploySuccessRate, countBlockingIssues, extractBlockingIssues, deployCommand, } from './commands/index.js';
-export type { DeployInput, DeployOptions, DeployStepLog, DeployCommandResult, DeployPreviewResult, DeployRunResult, DeployFullResult, } from './commands/index.js';
+export { deploy, deployPreview, deployRun, deployRollback, isProductionDeployment, calculateDeploySuccessRate, countBlockingIssues, extractBlockingIssues, deployCommand, ExportFormatValues, exportArtifacts, exportTerraform, exportKubernetes, exportHelm, exportAll, isExportFormat, determineExportEnvironment, isProductionExport, detectSecrets, detectInvalidReferences, detectMissingFields, validateArtifact, extractExportBlockingIssues, calculateExportSuccessRate, countExportFailures, assessExportRisk, exportCommand, } from './commands/index.js';
+export type { DeployInput, DeployOptions, DeployStepLog, DeployCommandResult, DeployPreviewResult, DeployRunResult, DeployFullResult, ExportFormat, ExportInput, ExportOptions, ExportArtifact, ExportValidationIssue, ExportStepLog, ExportCommandResult, LocalExportResult, ExportMetadata, } from './commands/index.js';
 /**
  * Default export provides the main convenience functions.
  */

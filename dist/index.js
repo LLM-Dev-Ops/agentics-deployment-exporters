@@ -614,10 +614,14 @@ calculateSuccessRate, determineEnvironment, } from './synthesis/index.js';
 // COMMANDS MODULE RE-EXPORTS
 // =============================================================================
 /**
- * Command implementations for deployment operations.
+ * Command implementations for deployment and export operations.
  * @see {@link module:commands}
  */
-export { deploy, deployPreview, deployRun, deployRollback, isProductionDeployment, calculateDeploySuccessRate, countBlockingIssues, extractBlockingIssues, deployCommand, } from './commands/index.js';
+export { 
+// Deploy command
+deploy, deployPreview, deployRun, deployRollback, isProductionDeployment, calculateDeploySuccessRate, countBlockingIssues, extractBlockingIssues, deployCommand, 
+// Export command
+ExportFormatValues, exportArtifacts, exportTerraform, exportKubernetes, exportHelm, exportAll, isExportFormat, determineExportEnvironment, isProductionExport, detectSecrets, detectInvalidReferences, detectMissingFields, validateArtifact, extractExportBlockingIssues, calculateExportSuccessRate, countExportFailures, assessExportRisk, exportCommand, } from './commands/index.js';
 // =============================================================================
 // DEFAULT EXPORT
 // =============================================================================
