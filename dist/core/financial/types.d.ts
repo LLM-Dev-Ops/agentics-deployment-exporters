@@ -434,7 +434,7 @@ export declare const CostLineItemSchema: z.ZodObject<{
         confidenceRange?: [number, number] | undefined;
     };
     itemId: string;
-    category: "compute" | "network" | "storage" | "database" | "security" | "infrastructure" | "licensing" | "personnel" | "training" | "migration" | "integration" | "maintenance" | "support" | "compliance" | "other";
+    category: "compute" | "network" | "storage" | "database" | "security" | "migration" | "compliance" | "infrastructure" | "licensing" | "personnel" | "training" | "integration" | "maintenance" | "support" | "other";
     isRecurring: boolean;
     resourceName?: string | undefined;
     notes?: string | undefined;
@@ -448,7 +448,7 @@ export declare const CostLineItemSchema: z.ZodObject<{
         confidenceRange?: [number, number] | undefined;
     };
     itemId: string;
-    category: "compute" | "network" | "storage" | "database" | "security" | "infrastructure" | "licensing" | "personnel" | "training" | "migration" | "integration" | "maintenance" | "support" | "compliance" | "other";
+    category: "compute" | "network" | "storage" | "database" | "security" | "migration" | "compliance" | "infrastructure" | "licensing" | "personnel" | "training" | "integration" | "maintenance" | "support" | "other";
     isRecurring: boolean;
     resourceName?: string | undefined;
     notes?: string | undefined;
@@ -576,7 +576,7 @@ export declare const CostBreakdownSchema: z.ZodObject<{
             confidenceRange?: [number, number] | undefined;
         };
         itemId: string;
-        category: "compute" | "network" | "storage" | "database" | "security" | "infrastructure" | "licensing" | "personnel" | "training" | "migration" | "integration" | "maintenance" | "support" | "compliance" | "other";
+        category: "compute" | "network" | "storage" | "database" | "security" | "migration" | "compliance" | "infrastructure" | "licensing" | "personnel" | "training" | "integration" | "maintenance" | "support" | "other";
         isRecurring: boolean;
         resourceName?: string | undefined;
         notes?: string | undefined;
@@ -590,7 +590,7 @@ export declare const CostBreakdownSchema: z.ZodObject<{
             confidenceRange?: [number, number] | undefined;
         };
         itemId: string;
-        category: "compute" | "network" | "storage" | "database" | "security" | "infrastructure" | "licensing" | "personnel" | "training" | "migration" | "integration" | "maintenance" | "support" | "compliance" | "other";
+        category: "compute" | "network" | "storage" | "database" | "security" | "migration" | "compliance" | "infrastructure" | "licensing" | "personnel" | "training" | "integration" | "maintenance" | "support" | "other";
         isRecurring: boolean;
         resourceName?: string | undefined;
         notes?: string | undefined;
@@ -647,7 +647,7 @@ export declare const CostBreakdownSchema: z.ZodObject<{
             confidenceRange?: [number, number] | undefined;
         };
         itemId: string;
-        category: "compute" | "network" | "storage" | "database" | "security" | "infrastructure" | "licensing" | "personnel" | "training" | "migration" | "integration" | "maintenance" | "support" | "compliance" | "other";
+        category: "compute" | "network" | "storage" | "database" | "security" | "migration" | "compliance" | "infrastructure" | "licensing" | "personnel" | "training" | "integration" | "maintenance" | "support" | "other";
         isRecurring: boolean;
         resourceName?: string | undefined;
         notes?: string | undefined;
@@ -692,7 +692,7 @@ export declare const CostBreakdownSchema: z.ZodObject<{
             confidenceRange?: [number, number] | undefined;
         };
         itemId: string;
-        category: "compute" | "network" | "storage" | "database" | "security" | "infrastructure" | "licensing" | "personnel" | "training" | "migration" | "integration" | "maintenance" | "support" | "compliance" | "other";
+        category: "compute" | "network" | "storage" | "database" | "security" | "migration" | "compliance" | "infrastructure" | "licensing" | "personnel" | "training" | "integration" | "maintenance" | "support" | "other";
         isRecurring: boolean;
         resourceName?: string | undefined;
         notes?: string | undefined;
@@ -777,7 +777,7 @@ export declare const SavingsItemSchema: z.ZodObject<{
         confidenceRange?: [number, number] | undefined;
     };
     itemId: string;
-    category: "compute" | "network" | "storage" | "database" | "security" | "infrastructure" | "licensing" | "personnel" | "training" | "migration" | "integration" | "maintenance" | "support" | "compliance" | "other";
+    category: "compute" | "network" | "storage" | "database" | "security" | "migration" | "compliance" | "infrastructure" | "licensing" | "personnel" | "training" | "integration" | "maintenance" | "support" | "other";
     methodology?: string | undefined;
 }, {
     type: "direct-savings" | "cost-avoidance" | "efficiency-gain" | "risk-reduction";
@@ -791,7 +791,7 @@ export declare const SavingsItemSchema: z.ZodObject<{
         confidenceRange?: [number, number] | undefined;
     };
     itemId: string;
-    category: "compute" | "network" | "storage" | "database" | "security" | "infrastructure" | "licensing" | "personnel" | "training" | "migration" | "integration" | "maintenance" | "support" | "compliance" | "other";
+    category: "compute" | "network" | "storage" | "database" | "security" | "migration" | "compliance" | "infrastructure" | "licensing" | "personnel" | "training" | "integration" | "maintenance" | "support" | "other";
     methodology?: string | undefined;
 }>;
 /**

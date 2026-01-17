@@ -323,11 +323,11 @@ export declare const ImplementationPlanItemSchema: z.ZodObject<{
     phase: string;
     description: string;
     priority: "low" | "medium" | "high" | "critical" | "informational";
+    affectedResources: string[];
     itemId: string;
     risks: string[];
     title: string;
     prerequisites: string[];
-    affectedResources: string[];
     simulationEvidence: string[];
     successCriteria: string[];
     estimatedEffort?: string | undefined;
@@ -336,11 +336,11 @@ export declare const ImplementationPlanItemSchema: z.ZodObject<{
     phase: string;
     description: string;
     priority: "low" | "medium" | "high" | "critical" | "informational";
+    affectedResources: string[];
     itemId: string;
     risks: string[];
     title: string;
     prerequisites: string[];
-    affectedResources: string[];
     simulationEvidence: string[];
     successCriteria: string[];
     estimatedEffort?: string | undefined;

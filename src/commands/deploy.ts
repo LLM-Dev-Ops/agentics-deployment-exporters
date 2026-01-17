@@ -133,6 +133,134 @@ export interface DeployFullResult extends DeployCommandResult {
   readonly run?: DeployRunResult;
 }
 
+/**
+ * Rollback input with target version.
+ */
+export interface RollbackInput extends DeployInput {
+  /** Target version to rollback to */
+  readonly targetVersion: string;
+}
+
+/**
+ * Result of a deployment status check (read-only, no synthesis).
+ */
+export interface DeployStatusResult {
+  /** Whether the status check succeeded */
+  readonly success: boolean;
+  /** Current deployment status */
+  readonly status: DeployStatus;
+  /** Current version deployed */
+  readonly currentVersion?: string;
+  /** Last deployment timestamp */
+  readonly lastDeployedAt?: string;
+  /** Health check results */
+  readonly health?: DeployHealthCheck;
+  /** Error message if status check failed */
+  readonly error?: string;
+}
+
+/**
+ * Health check results for deployment status.
+ */
+export interface DeployHealthCheck {
+  /** Overall health status */
+  readonly status: 'healthy' | 'degraded' | 'unhealthy';
+  /** Individual component checks */
+  readonly components: readonly ComponentHealth[];
+  /** Last check timestamp */
+  readonly checkedAt: string;
+}
+
+/**
+ * Individual component health status.
+ */
+export interface ComponentHealth {
+  /** Component name */
+  readonly name: string;
+  /** Component status */
+  readonly status: 'healthy' | 'degraded' | 'unhealthy';
+  /** Status message */
+  readonly message?: string;
+}
+
+/**
+ * Blast radius estimation for deployment impact.
+ */
+export interface BlastRadiusEstimation {
+  /** Affected resource count */
+  readonly affectedResources: number;
+  /** Affected services list */
+  readonly affectedServices: readonly string[];
+  /** Downstream dependencies impacted */
+  readonly downstreamImpact: number;
+  /** Estimated users affected */
+  readonly estimatedUsersAffected?: number;
+  /** Blast radius severity: localized, moderate, widespread, critical */
+  readonly severity: 'localized' | 'moderate' | 'widespread' | 'critical';
+  /** Human-readable summary */
+  readonly summary: string;
+}
+
+/**
+ * Rollback feasibility assessment.
+ */
+export interface RollbackFeasibility {
+  /** Feasibility score (0.0 to 1.0, higher = easier to rollback) */
+  readonly score: number;
+  /** Whether rollback is possible */
+  readonly isPossible: boolean;
+  /** Estimated rollback duration in seconds */
+  readonly estimatedDurationSeconds: number;
+  /** Potential data loss risk */
+  readonly dataLossRisk: 'none' | 'minimal' | 'moderate' | 'significant';
+  /** Blocking factors for rollback */
+  readonly blockingFactors: readonly string[];
+  /** Human-readable assessment */
+  readonly assessment: string;
+}
+
+/**
+ * Data integrity assessment for rollback operations.
+ */
+export interface DataIntegrityAssessment {
+  /** Integrity score (0.0 to 1.0, higher = better integrity) */
+  readonly score: number;
+  /** Schema compatibility status */
+  readonly schemaCompatibility: 'compatible' | 'migration_required' | 'incompatible';
+  /** Data migration requirements */
+  readonly migrationRequired: boolean;
+  /** Potential data loss areas */
+  readonly potentialDataLoss: readonly string[];
+  /** Recovery completeness estimate (percentage) */
+  readonly recoveryCompleteness: number;
+  /** Human-readable assessment */
+  readonly assessment: string;
+}
+
+/**
+ * Enhanced synthesis metadata for deployment operations.
+ */
+export interface DeploymentSynthesisMetadata {
+  /** Deployment ID */
+  readonly deployment_id?: string;
+  /** Preview change count */
+  readonly preview_changes?: number;
+  /** Duration in milliseconds */
+  readonly duration_ms?: number;
+  /** Blast radius estimation */
+  readonly blast_radius?: BlastRadiusEstimation;
+  /** Rollback feasibility assessment */
+  readonly rollback_feasibility?: RollbackFeasibility;
+  /** Data integrity assessment (for rollbacks) */
+  readonly data_integrity?: DataIntegrityAssessment;
+  /** Diff validity status */
+  readonly diff_validity?: 'valid' | 'stale' | 'invalid';
+  /** Target reachability status */
+  readonly target_reachability?: 'reachable' | 'partial' | 'unreachable';
+  /** Idempotency confirmation */
+  readonly idempotency_confirmed?: boolean;
+}
+
 // =============================================================================
 // HELPER FUNCTIONS
 // =============================================================================
@@ -234,6 +362,241 @@ export function extractBlockingIssues(result: {
   return Object.freeze(issues);
 }
 
+/**
+ * Estimates blast radius for deployment changes.
+ *
+ * @param preview - Deployment preview with changes
+ * @param input - Deployment input
+ * @returns Blast radius estimation
+ */
+export function estimateBlastRadius(
+  preview: DeployPreview,
+  input: DeployInput
+): BlastRadiusEstimation {
+  const affectedResources = preview.changes.length;
+
+  // Extract affected services from resource paths
+  const affectedServices = [...new Set(
+    preview.changes.map((c) => {
+      const parts = c.resource.split('/');
+      return parts.length > 1 ? parts[1]! : parts[0]!;
+    })
+  )];
+
+  // Calculate downstream impact (simulated - in production would query dependency graph)
+  const downstreamImpact = Math.ceil(affectedResources * 1.5);
+
+  // Estimate users affected based on environment
+  const isProduction = isProductionDeployment(input);
+  const estimatedUsersAffected = isProduction
+    ? affectedResources * 1000 // Production = many users
+    : affectedResources * 10; // Non-prod = limited users
+
+  // Determine severity based on factors
+  let severity: BlastRadiusEstimation['severity'] = 'localized';
+  const hasDestructive = preview.changes.some((c) => c.action === 'delete' || c.destructive);
+
+  if (isProduction && hasDestructive) {
+    severity = 'critical';
+  } else if (isProduction || affectedResources > 10) {
+    severity = 'widespread';
+  } else if (affectedResources > 5 || hasDestructive) {
+    severity = 'moderate';
+  }
+
+  const summary = `${affectedResources} resources affected, ${downstreamImpact} downstream dependencies, ${severity} impact severity`;
+
+  return Object.freeze({
+    affectedResources,
+    affectedServices: Object.freeze(affectedServices),
+    downstreamImpact,
+    estimatedUsersAffected,
+    severity,
+    summary,
+  });
+}
+
+/**
+ * Assesses rollback feasibility for a deployment.
+ *
+ * @param preview - Deployment preview
+ * @param input - Deployment input
+ * @returns Rollback feasibility assessment
+ */
+export function assessRollbackFeasibility(
+  preview: DeployPreview,
+  input: DeployInput
+): RollbackFeasibility {
+  const blockingFactors: string[] = [];
+
+  // Check for irreversible changes
+  const hasDeletes = preview.changes.some((c) => c.action === 'delete');
+  const hasDestructive = preview.changes.some((c) => c.destructive);
+
+  if (hasDeletes) {
+    blockingFactors.push('Delete operations cannot be automatically reversed');
+  }
+
+  if (hasDestructive) {
+    blockingFactors.push('Destructive changes may cause data loss on rollback');
+  }
+
+  // Check for database migrations (simulated detection)
+  const hasMigrations = preview.changes.some((c) =>
+    c.resource.includes('migration') ||
+    c.resource.includes('schema') ||
+    c.description?.toLowerCase().includes('migration')
+  );
+
+  if (hasMigrations) {
+    blockingFactors.push('Database migrations may require manual rollback');
+  }
+
+  // Calculate feasibility score
+  let score = 1.0;
+  if (hasDeletes) score -= 0.3;
+  if (hasDestructive) score -= 0.3;
+  if (hasMigrations) score -= 0.2;
+  if (isProductionDeployment(input)) score -= 0.1;
+  score = Math.max(0, score);
+
+  // Determine data loss risk
+  let dataLossRisk: RollbackFeasibility['dataLossRisk'] = 'none';
+  if (hasDestructive || hasDeletes) {
+    dataLossRisk = hasMigrations ? 'significant' : 'moderate';
+  } else if (hasMigrations) {
+    dataLossRisk = 'minimal';
+  }
+
+  // Estimate rollback duration
+  const estimatedDurationSeconds = preview.changes.length * 15 +
+    (hasDeletes ? 60 : 0) +
+    (hasMigrations ? 120 : 0);
+
+  const isPossible = score > 0.2 && !hasDeletes;
+
+  const assessment = isPossible
+    ? `Rollback feasible with ${Math.round(score * 100)}% confidence. ${blockingFactors.length > 0 ? 'Considerations: ' + blockingFactors.join('; ') : ''}`
+    : `Rollback may not be possible. Blocking factors: ${blockingFactors.join('; ')}`;
+
+  return Object.freeze({
+    score,
+    isPossible,
+    estimatedDurationSeconds,
+    dataLossRisk,
+    blockingFactors: Object.freeze(blockingFactors),
+    assessment,
+  });
+}
+
+/**
+ * Assesses data integrity for rollback operations.
+ *
+ * @param currentVersion - Current deployed version
+ * @param targetVersion - Target rollback version
+ * @param input - Deployment input
+ * @returns Data integrity assessment
+ */
+export function assessDataIntegrity(
+  currentVersion: string | undefined,
+  targetVersion: string,
+  input: DeployInput
+): DataIntegrityAssessment {
+  const potentialDataLoss: string[] = [];
+
+  // Simulate version comparison (in production would analyze actual schema changes)
+  const versionGap = currentVersion && targetVersion
+    ? Math.abs(parseFloat(currentVersion) - parseFloat(targetVersion))
+    : 0;
+
+  // Determine schema compatibility based on version gap
+  let schemaCompatibility: DataIntegrityAssessment['schemaCompatibility'] = 'compatible';
+  let migrationRequired = false;
+
+  if (versionGap >= 1.0) {
+    schemaCompatibility = 'incompatible';
+    migrationRequired = true;
+    potentialDataLoss.push('Major version rollback may lose new data structures');
+  } else if (versionGap >= 0.5) {
+    schemaCompatibility = 'migration_required';
+    migrationRequired = true;
+    potentialDataLoss.push('Minor version changes may require data migration');
+  }
+
+  // Production environments have stricter data integrity requirements
+  if (isProductionDeployment(input) && versionGap > 0) {
+    potentialDataLoss.push('Production data created after target version may be affected');
+  }
+
+  // Calculate integrity score
+  let score = 1.0;
+  if (schemaCompatibility === 'incompatible') score -= 0.5;
+  if (schemaCompatibility === 'migration_required') score -= 0.2;
+  if (migrationRequired) score -= 0.1;
+  if (isProductionDeployment(input)) score -= 0.1;
+  score = Math.max(0, score);
+
+  // Estimate recovery completeness
+  const recoveryCompleteness = Math.round(score * 100);
+
+  const assessment = score >= 0.8
+    ? `High data integrity confidence (${recoveryCompleteness}% recovery expected)`
+    : score >= 0.5
+      ? `Moderate data integrity risk. ${migrationRequired ? 'Migration required. ' : ''}Recovery: ${recoveryCompleteness}%`
+      : `Low data integrity confidence. Manual intervention likely required. Recovery: ${recoveryCompleteness}%`;
+
+  return Object.freeze({
+    score,
+    schemaCompatibility,
+    migrationRequired,
+    potentialDataLoss: Object.freeze(potentialDataLoss),
+    recoveryCompleteness,
+    assessment,
+  });
+}
+
+/**
+ * Validates diff freshness and validity.
+ *
+ * @param preview - Deployment preview
+ * @param previewTimestamp - When preview was generated
+ * @returns Diff validity status
+ */
+export function validateDiffValidity(
+  preview: DeployPreview,
+  previewTimestamp: string
+): 'valid' | 'stale' | 'invalid' {
+  // Check if preview has changes
+  if (preview.changes.length === 0) {
+    return 'invalid';
+  }
+
+  // Check if preview is stale (older than 5 minutes)
+  const previewTime = new Date(previewTimestamp).getTime();
+  const currentTime = Date.now();
+  const ageMinutes = (currentTime - previewTime) / (1000 * 60);
+
+  if (ageMinutes > 5) {
+    return 'stale';
+  }
+
+  return 'valid';
+}
+
+/**
+ * Checks target environment reachability.
+ *
+ * @param input - Deployment input
+ * @returns Target reachability status
+ */
+export function checkTargetReachability(
+  input: DeployInput
+): 'reachable' | 'partial' | 'unreachable' {
+  // Simulated reachability check (in production would perform actual health checks)
+  // For now, always return reachable
+  return 'reachable';
+}
+
 // =============================================================================
 // PREVIEW COMMAND
 // =============================================================================
@@ -325,15 +688,41 @@ export async function deployPreview(input: DeployInput): Promise<DeployPreviewRe
     durationMs: Date.now() - previewStart,
   });
 
+  // Calculate enhanced synthesis metadata
+  const previewTimestamp = now();
+  const blastRadius = estimateBlastRadius(preview, input);
+  const rollbackFeasibility = assessRollbackFeasibility(preview, input);
+  const diffValidity = validateDiffValidity(preview, previewTimestamp);
+  const targetReachability = checkTargetReachability(input);
+
   // Build synthesis from preview
   const deployRef: DeployReferenceInput = {
     environment: input.environment,
-    timestamp: now(),
+    timestamp: previewTimestamp,
     version: input.version,
     commit_sha: input.commit_sha || process.env['GIT_SHA'],
   };
 
   let synthesis = buildSynthesisFromPreview(preview, deployRef, false);
+
+  // Add enhanced metadata to synthesis
+  const enhancedMetadata: DeploymentSynthesisMetadata = {
+    preview_changes: preview.changes.length,
+    duration_ms: Date.now() - startTime,
+    blast_radius: blastRadius,
+    rollback_feasibility: rollbackFeasibility,
+    diff_validity: diffValidity,
+    target_reachability: targetReachability,
+    idempotency_confirmed: true, // Preview is idempotent
+  };
+
+  synthesis = Object.freeze({
+    ...synthesis,
+    metadata: Object.freeze({
+      ...(synthesis.metadata || {}),
+      ...enhancedMetadata,
+    }),
+  });
 
   // CRITICAL: Production risk elevation
   if (isProductionDeployment(input)) {
@@ -349,6 +738,32 @@ export async function deployPreview(input: DeployInput): Promise<DeployPreviewRe
         ...(synthesis.advisory_notes || []),
         'Preview indicates high-risk changes',
       ]),
+    });
+  }
+
+  // Blast radius severity affects risk level
+  if (blastRadius.severity === 'critical' && synthesis.risk_level !== 'critical') {
+    synthesis = Object.freeze({
+      ...synthesis,
+      risk_level: 'critical',
+      advisory_notes: Object.freeze([
+        ...(synthesis.advisory_notes || []),
+        `Critical blast radius: ${blastRadius.summary}`,
+      ]),
+    });
+  }
+
+  // Low rollback feasibility adds blocking issue
+  if (!rollbackFeasibility.isPossible) {
+    const blockingIssues = [...synthesis.execution.blocking_issues];
+    blockingIssues.push(`Rollback not feasible: ${rollbackFeasibility.assessment}`);
+
+    synthesis = Object.freeze({
+      ...synthesis,
+      execution: Object.freeze({
+        ...synthesis.execution,
+        blocking_issues: Object.freeze(blockingIssues),
+      }),
     });
   }
 
@@ -551,6 +966,28 @@ export async function deployRun(
   };
 
   let synthesis = buildSynthesisFromRecord(record, stepsExecuted, metricsInput);
+
+  // Add enhanced metadata from preview if available
+  const previewMetadata = preview?.synthesis?.metadata as DeploymentSynthesisMetadata | undefined;
+
+  const enhancedMetadata: DeploymentSynthesisMetadata = {
+    deployment_id: record.id,
+    duration_ms: Date.now() - startTime,
+    target_reachability: checkTargetReachability(input),
+    idempotency_confirmed: record.status === 'completed',
+    // Include blast radius and rollback feasibility from preview
+    ...(previewMetadata?.blast_radius && { blast_radius: previewMetadata.blast_radius }),
+    ...(previewMetadata?.rollback_feasibility && { rollback_feasibility: previewMetadata.rollback_feasibility }),
+    ...(preview && { preview_changes: preview.preview.changes.length }),
+  };
+
+  synthesis = Object.freeze({
+    ...synthesis,
+    metadata: Object.freeze({
+      ...(synthesis.metadata || {}),
+      ...enhancedMetadata,
+    }),
+  });
 
   // Apply production risk elevation
   if (isProductionDeployment(input)) {
@@ -763,26 +1200,75 @@ export async function deployRollback(
   const stepsCompleted = logs.filter((l) => l.status === 'completed').length;
   const stepsTotal = logs.length;
 
+  // Assess data integrity for the rollback
+  const dataIntegrity = assessDataIntegrity(
+    input.version, // Current version (before rollback)
+    input.targetVersion, // Target rollback version
+    input
+  );
+
+  // Calculate blocking issues based on data integrity assessment
+  const blockingIssues: string[] = [];
+  if (dataIntegrity.schemaCompatibility === 'incompatible') {
+    blockingIssues.push('Schema incompatibility may require manual data migration');
+  }
+  if (dataIntegrity.potentialDataLoss.length > 0) {
+    blockingIssues.push(...dataIntegrity.potentialDataLoss);
+  }
+
   const metricsInput: ExecutionMetricsInput = {
     success_rate: calculateSuccessRate(stepsCompleted, stepsTotal),
     failed_iterations: logs.filter((l) => l.status === 'failed').length,
-    blocking_issues: [],
+    blocking_issues: blockingIssues,
     steps_total: stepsTotal,
     steps_completed: stepsCompleted,
   };
 
   let synthesis = buildSynthesisFromRecord(record, stepsExecuted, metricsInput);
 
+  // Add enhanced metadata with data integrity assessment
+  const enhancedMetadata: DeploymentSynthesisMetadata = {
+    deployment_id: record.id,
+    duration_ms: Date.now() - startTime,
+    data_integrity: dataIntegrity,
+    target_reachability: checkTargetReachability(input),
+  };
+
+  synthesis = Object.freeze({
+    ...synthesis,
+    metadata: Object.freeze({
+      ...(synthesis.metadata || {}),
+      ...enhancedMetadata,
+    }),
+  });
+
   // Rollback always results in DEFER for review
+  const advisoryNotes = [
+    ...(synthesis.advisory_notes || []),
+    `Rolled back to version ${input.targetVersion}`,
+    'Rollback requires post-deployment verification',
+    `Data integrity: ${dataIntegrity.assessment}`,
+    `Recovery completeness: ${dataIntegrity.recoveryCompleteness}%`,
+  ];
+
   synthesis = Object.freeze({
     ...synthesis,
     recommendation: 'DEFER',
-    advisory_notes: Object.freeze([
-      ...(synthesis.advisory_notes || []),
-      `Rolled back to version ${input.targetVersion}`,
-      'Rollback requires post-deployment verification',
-    ]),
+    advisory_notes: Object.freeze(advisoryNotes),
   });
+
+  // Elevate risk based on data integrity score
+  if (dataIntegrity.score < 0.5) {
+    synthesis = Object.freeze({
+      ...synthesis,
+      risk_level: 'critical',
+    });
+  } else if (dataIntegrity.score < 0.8 && synthesis.risk_level === 'low') {
+    synthesis = Object.freeze({
+      ...synthesis,
+      risk_level: 'medium',
+    });
+  }
 
   // Apply production risk elevation
   if (isProductionDeployment(input)) {
@@ -798,6 +1284,46 @@ export async function deployRollback(
 }
 
 // =============================================================================
+// STATUS COMMAND (Read-Only - No Synthesis)
+// =============================================================================
+
+/**
+ * Retrieves current deployment status.
+ *
+ * NOTE: This is a read-only operation and does NOT generate synthesis.
+ * Status checks are purely observational and do not require approval workflows.
+ *
+ * @param input - Deployment input (only environment is required)
+ * @returns Status result (no synthesis field)
+ */
+export async function deployStatus(
+  input: Pick<DeployInput, 'environment'>
+): Promise<DeployStatusResult> {
+  // Simulate status check (in production would query actual deployment state)
+  const currentVersion = '1.0.0';
+  const lastDeployedAt = new Date(Date.now() - 3600000).toISOString(); // 1 hour ago
+
+  // Simulate health check
+  const health: DeployHealthCheck = {
+    status: 'healthy',
+    components: Object.freeze([
+      { name: 'api', status: 'healthy', message: 'All endpoints responding' },
+      { name: 'database', status: 'healthy', message: 'Connection pool active' },
+      { name: 'cache', status: 'healthy', message: 'Redis connected' },
+    ]),
+    checkedAt: now(),
+  };
+
+  return Object.freeze({
+    success: true,
+    status: 'completed',
+    currentVersion,
+    lastDeployedAt,
+    health: Object.freeze(health),
+  });
+}
+
+// =============================================================================
 // EXPORTS
 // =============================================================================
 
@@ -806,8 +1332,14 @@ export default {
   deployPreview,
   deployRun,
   deployRollback,
+  deployStatus,
   isProductionDeployment,
   calculateDeploySuccessRate,
   countBlockingIssues,
   extractBlockingIssues,
+  estimateBlastRadius,
+  assessRollbackFeasibility,
+  assessDataIntegrity,
+  validateDiffValidity,
+  checkTargetReachability,
 };

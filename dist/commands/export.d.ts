@@ -18,7 +18,7 @@ import type { ExecutiveSummary, RiskLevel } from '../synthesis/index.js';
 /**
  * Supported export formats.
  */
-export declare const ExportFormatValues: readonly ["terraform", "kubernetes", "helm", "cloudformation"];
+export declare const ExportFormatValues: readonly ["terraform", "kubernetes", "helm", "cloudformation", "erp"];
 export type ExportFormat = (typeof ExportFormatValues)[number];
 /**
  * Export command input configuration.
@@ -231,6 +231,21 @@ export declare function exportHelm(source: ExportInput['source'], options?: Expo
     outputDir?: string;
 }): Promise<LocalExportResult>;
 /**
+ * Exports to ERP format only.
+ *
+ * ERP exports generate:
+ * - manifest.json: Integration manifest with modules, integrations, and data model
+ * - schema.json: JSON Schema for ERP data entities
+ * - migrations/001_initial.sql: Database migration script
+ *
+ * All artifacts include SHA-256 checksums for integrity verification.
+ * ERP exports have elevated risk assessment due to financial data sensitivity.
+ */
+export declare function exportERP(source: ExportInput['source'], options?: ExportOptions & {
+    environment?: string;
+    outputDir?: string;
+}): Promise<LocalExportResult>;
+/**
  * Exports to all supported formats.
  */
 export declare function exportAll(source: ExportInput['source'], options?: ExportOptions & {
@@ -242,6 +257,7 @@ declare const _default: {
     exportTerraform: typeof exportTerraform;
     exportKubernetes: typeof exportKubernetes;
     exportHelm: typeof exportHelm;
+    exportERP: typeof exportERP;
     exportAll: typeof exportAll;
     isExportFormat: typeof isExportFormat;
     determineExportEnvironment: typeof determineExportEnvironment;

@@ -14,7 +14,7 @@
  * @module commands/export
  * @version 1.0.0
  */
-import { randomUUID } from 'crypto';
+import { randomUUID, createHash } from 'crypto';
 import { buildExecutiveSummary, elevateRiskForProduction, isProductionTarget, calculateSuccessRate, } from '../synthesis/index.js';
 // =============================================================================
 // TYPES
@@ -22,7 +22,7 @@ import { buildExecutiveSummary, elevateRiskForProduction, isProductionTarget, ca
 /**
  * Supported export formats.
  */
-export const ExportFormatValues = ['terraform', 'kubernetes', 'helm', 'cloudformation'];
+export const ExportFormatValues = ['terraform', 'kubernetes', 'helm', 'cloudformation', 'erp'];
 // =============================================================================
 // CONSTANTS
 // =============================================================================
@@ -57,6 +57,7 @@ const REQUIRED_FIELDS = {
     kubernetes: ['apiVersion', 'kind', 'metadata'],
     helm: ['apiVersion', 'name', 'version'],
     cloudformation: ['AWSTemplateFormatVersion', 'Resources'],
+    erp: ['erpVersion', 'modules', 'integrations', 'dataModel'],
 };
 // =============================================================================
 // HELPER FUNCTIONS
@@ -241,6 +242,36 @@ export function assessExportRisk(input, result) {
         }
         if (isProductionExport(input)) {
             riskLevel = riskLevel === 'low' ? 'medium' : 'high';
+        }
+    }
+    // ERP exports - financial data is always sensitive
+    if (input.formats.includes('erp')) {
+        // Calculate ERP-specific risk factors
+        const hasComplianceData = result.artifacts?.some((a) => {
+            const content = typeof a.content === 'string' ? a.content : JSON.stringify(a.content);
+            return (content.includes('compliance') ||
+                content.includes('SOX') ||
+                content.includes('GDPR') ||
+                content.includes('PCI'));
+        });
+        const hasMigrations = result.artifacts?.some((a) => a.path.includes('migration') || a.path.endsWith('.sql'));
+        const isProduction = isProductionExport(input);
+        // ERP risk escalation (ordered from highest to lowest priority)
+        if (hasMigrations && isProduction) {
+            // Production database migrations are critical risk
+            riskLevel = 'critical';
+        }
+        else if (isProduction) {
+            // Production ERP exports are high risk minimum
+            riskLevel = 'high';
+        }
+        else if (hasComplianceData || hasMigrations) {
+            // Compliance data or migrations = high risk
+            riskLevel = 'high';
+        }
+        else if (riskLevel === 'low') {
+            // Base ERP export = minimum medium risk
+            riskLevel = 'medium';
         }
     }
     // Any validation errors elevate risk
@@ -471,6 +502,33 @@ async function generateFormatArtifacts(input, format) {
                 sizeBytes: 768,
             });
             break;
+        case 'erp': {
+            const manifestContent = generateERPManifestContent(input);
+            const schemaContent = generateERPSchemaContent(input);
+            const migrationContent = generateERPMigrationContent(input);
+            artifacts.push({
+                path: `${basePath}/manifest.json`,
+                content: manifestContent,
+                format: 'erp',
+                sizeBytes: Buffer.byteLength(manifestContent, 'utf8'),
+                checksum: computeChecksum(manifestContent),
+            });
+            artifacts.push({
+                path: `${basePath}/schema.json`,
+                content: schemaContent,
+                format: 'erp',
+                sizeBytes: Buffer.byteLength(schemaContent, 'utf8'),
+                checksum: computeChecksum(schemaContent),
+            });
+            artifacts.push({
+                path: `${basePath}/migrations/001_initial.sql`,
+                content: migrationContent,
+                format: 'erp',
+                sizeBytes: Buffer.byteLength(migrationContent, 'utf8'),
+                checksum: computeChecksum(migrationContent),
+            });
+            break;
+        }
     }
     return artifacts;
 }
@@ -570,6 +628,155 @@ Resources:
         - Key: ManagedBy
           Value: agentics-exporters
 `;
+}
+/**
+ * Generates ERP integration manifest content.
+ */
+function generateERPManifestContent(input) {
+    const env = determineExportEnvironment(input);
+    const timestamp = new Date().toISOString();
+    return `{
+  "erpVersion": "2.0.0",
+  "generatedAt": "${timestamp}",
+  "environment": "${env}",
+  "modules": [
+    {
+      "id": "core-finance",
+      "name": "Core Finance Module",
+      "version": "1.0.0",
+      "enabled": true
+    },
+    {
+      "id": "inventory",
+      "name": "Inventory Management",
+      "version": "1.0.0",
+      "enabled": true
+    },
+    {
+      "id": "procurement",
+      "name": "Procurement & Purchasing",
+      "version": "1.0.0",
+      "enabled": true
+    }
+  ],
+  "integrations": [
+    {
+      "id": "api-gateway",
+      "type": "rest",
+      "endpoint": "/api/v1",
+      "authentication": "oauth2"
+    },
+    {
+      "id": "event-bus",
+      "type": "async",
+      "protocol": "amqp",
+      "queue": "erp-events"
+    }
+  ],
+  "dataModel": {
+    "version": "1.0.0",
+    "entities": ["Account", "Transaction", "Inventory", "Order", "Vendor"]
+  },
+  "metadata": {
+    "managedBy": "agentics-exporters",
+    "compliance": ["SOX", "GDPR"]
+  }
+}`;
+}
+/**
+ * Generates ERP data model schema content.
+ */
+function generateERPSchemaContent(input) {
+    return `{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ERP Data Model Schema",
+  "type": "object",
+  "required": ["entities"],
+  "properties": {
+    "entities": {
+      "type": "object",
+      "properties": {
+        "Account": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string", "format": "uuid" },
+            "code": { "type": "string", "maxLength": 20 },
+            "name": { "type": "string", "maxLength": 255 },
+            "type": { "enum": ["asset", "liability", "equity", "revenue", "expense"] },
+            "balance": { "type": "number" },
+            "currency": { "type": "string", "pattern": "^[A-Z]{3}$" }
+          },
+          "required": ["id", "code", "name", "type"]
+        },
+        "Transaction": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string", "format": "uuid" },
+            "date": { "type": "string", "format": "date-time" },
+            "debitAccountId": { "type": "string", "format": "uuid" },
+            "creditAccountId": { "type": "string", "format": "uuid" },
+            "amount": { "type": "number", "minimum": 0 },
+            "description": { "type": "string" }
+          },
+          "required": ["id", "date", "debitAccountId", "creditAccountId", "amount"]
+        }
+      }
+    }
+  }
+}`;
+}
+/**
+ * Generates ERP migration script content.
+ */
+function generateERPMigrationContent(input) {
+    const env = determineExportEnvironment(input);
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    return `-- ERP Migration Script
+-- Environment: ${env}
+-- Generated: ${timestamp}
+-- Version: 1.0.0
+
+-- Migration: Create core ERP tables
+BEGIN TRANSACTION;
+
+CREATE TABLE IF NOT EXISTS erp_accounts (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    code VARCHAR(20) NOT NULL UNIQUE,
+    name VARCHAR(255) NOT NULL,
+    account_type VARCHAR(20) NOT NULL CHECK (account_type IN ('asset', 'liability', 'equity', 'revenue', 'expense')),
+    parent_id UUID REFERENCES erp_accounts(id),
+    balance DECIMAL(18, 4) DEFAULT 0,
+    currency CHAR(3) DEFAULT 'USD',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS erp_transactions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    transaction_date TIMESTAMP WITH TIME ZONE NOT NULL,
+    debit_account_id UUID NOT NULL REFERENCES erp_accounts(id),
+    credit_account_id UUID NOT NULL REFERENCES erp_accounts(id),
+    amount DECIMAL(18, 4) NOT NULL CHECK (amount > 0),
+    description TEXT,
+    reference_number VARCHAR(50),
+    status VARCHAR(20) DEFAULT 'pending',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_transactions_date ON erp_transactions(transaction_date);
+CREATE INDEX idx_transactions_accounts ON erp_transactions(debit_account_id, credit_account_id);
+
+COMMIT;
+`;
+}
+/**
+ * Computes SHA-256 checksum for content.
+ */
+function computeChecksum(content) {
+    const contentStr = typeof content === 'string'
+        ? content
+        : JSON.stringify(content);
+    return createHash('sha256').update(contentStr).digest('hex');
 }
 /**
  * Builds the final export result with synthesis.
@@ -714,12 +921,32 @@ export async function exportHelm(source, options) {
     });
 }
 /**
+ * Exports to ERP format only.
+ *
+ * ERP exports generate:
+ * - manifest.json: Integration manifest with modules, integrations, and data model
+ * - schema.json: JSON Schema for ERP data entities
+ * - migrations/001_initial.sql: Database migration script
+ *
+ * All artifacts include SHA-256 checksums for integrity verification.
+ * ERP exports have elevated risk assessment due to financial data sensitivity.
+ */
+export async function exportERP(source, options) {
+    return exportArtifacts({
+        source,
+        formats: ['erp'],
+        environment: options?.environment,
+        outputDir: options?.outputDir,
+        options,
+    });
+}
+/**
  * Exports to all supported formats.
  */
 export async function exportAll(source, options) {
     return exportArtifacts({
         source,
-        formats: ['terraform', 'kubernetes', 'helm'],
+        formats: ['terraform', 'kubernetes', 'helm', 'cloudformation', 'erp'],
         environment: options?.environment,
         outputDir: options?.outputDir,
         options,
@@ -733,6 +960,7 @@ export default {
     exportTerraform,
     exportKubernetes,
     exportHelm,
+    exportERP,
     exportAll,
     isExportFormat,
     determineExportEnvironment,
